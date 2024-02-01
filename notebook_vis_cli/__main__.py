@@ -44,6 +44,8 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import colorcet as cc
 
+# Default colormap is perceptually-accurate and colorblind-friendly
+# See https://colorcet.com/index.html for details
 # Displaying the heatmap using seaborn
 # For detailed information on the parameters, visit:
 # https://seaborn.pydata.org/generated/seaborn.heatmap.html#seaborn.heatmap
@@ -71,8 +73,6 @@ sns.heatmap(df,
 plt.show()
 '''
 
-
-
 # Function to create a seaborn clustermap cell
 def create_clustermap_cell():
     return '''
@@ -80,6 +80,8 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import colorcet as cc
 
+# Default colormap is perceptually-accurate and colorblind-friendly
+# See https://colorcet.com/index.html for details
 # Seaborn clustermap documentation
 # https://seaborn.pydata.org/generated/seaborn.clustermap.html
 sns.clustermap(df, 
