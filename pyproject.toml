@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "notebook-vis-cli"
-version = "0.1.0"
-description = "Generate jupyter notebooks preloaded with visualization boilerplate"
+name = "datavis-cli"
+version = "0.1.1"
+description = "Output data loading and visualization boilerplate"
 authors = ["Ben Skubi <bskubi@gmail.com>"]
 readme = "README.md"
 
@@ -11,11 +11,9 @@ click = "^8.1.7"
 pandas = "^2.2.0"
 pyyaml = "^6.0.1"
 seaborn = "^0.13.2"
-nbformat = "^5.9.2"
 
 [tool.poetry.scripts]
-notebook-vis-cli = "notebook_vis_cli.__main__:cli"
-
+datavis-cli = "data_vis_cli.__main__:cli"
 
 [build-system]
 requires = ["poetry-core"]
