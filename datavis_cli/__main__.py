@@ -14,16 +14,22 @@ def cli():
 @click.command()
 @click.argument('filename')
 @click.argument('dataframe_name')
-def load_dataframe(filename, dataframe_name):
-    click.echo(f'''
+@click.option('--to_numeric', default=True, help='Convert elements to numeric')
+def load_dataframe(filename, dataframe_name, to_numeric):
+    cmd = f"""
 import pandas as pd
 import yaml
 
-with open("{filename}", 'r') as file:
-    {dataframe_name} = pd.DataFrame(yaml.safe_load(file))
+with open("{filename}", "r") as file:
+    {dataframe_name} = pd.DataFrame(yaml.safe_load(file))"""
+
+    if to_numeric:
+        cmd += f"""\n{dataframe_name} = {dataframe_name}.map(lambda e: pandas.to_numeric(e, errors='coerce'))\n"""
+    cmd += f"""
 print({dataframe_name}.head())
 print({dataframe_name}.describe())
-''')
+"""
+    click.echo(cmd)
 
 @click.command()
 @click.argument('dataframe_name')

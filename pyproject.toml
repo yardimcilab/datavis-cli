@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "datavis-cli"
-version = "0.1.1"
+version = "0.1.3"
 description = "Output data loading and visualization boilerplate"
 authors = ["Ben Skubi <bskubi@gmail.com>"]
 readme = "README.md"
@@ -13,7 +13,7 @@ pyyaml = "^6.0.1"
 seaborn = "^0.13.2"
 
 [tool.poetry.scripts]
-datavis-cli = "data_vis_cli.__main__:cli"
+datavis-cli = "datavis_cli.__main__:cli"
 
 [build-system]
 requires = ["poetry-core"]
