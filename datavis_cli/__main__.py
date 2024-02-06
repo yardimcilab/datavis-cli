@@ -2,6 +2,62 @@ import click
 import os
 import yaml
 import pandas as pd
+import inspect
+import seaborn as sns
+
+class UnquotedStr:
+    def __init__(self, value):
+        self.value = value
+    
+    def __repr__(self):
+        return self.value
+
+def get_method_call_with_defaults(func, prefix, additional_methods=[], exclude_params = [], **kwargs):
+    def get_param_defaults(func, override_params={}):
+        signature = inspect.signature(func)
+        param_defaults = {}
+        for name, param in signature.parameters.items():
+            # Skip self parameter for methods and **kwargs
+            if name == 'self' or param.kind == inspect.Parameter.VAR_KEYWORD:
+                continue
+            if name in override_params:  # Check if the param is overridden in kwargs
+                param_value = repr(override_params[name])
+            elif param.default is not param.empty:
+                param_value = repr(param.default)
+            else:
+                param_value = name  # Keep as is for non-default params
+            param_defaults[name] = param_value
+        return param_defaults
+
+    params_defaults = {}
+
+    # Merge kwargs from additional methods
+    for additional_func in additional_methods:
+        additional_params_defaults = get_param_defaults(additional_func, kwargs)
+        if additional_params_defaults:
+            params_defaults.update(additional_params_defaults)
+    
+    # Main function params and defaults
+    main_params_defaults = get_param_defaults(func, kwargs)
+    params_defaults.update(main_params_defaults)
+
+    # Exclude params
+    for p in exclude_params:
+        del params_defaults[p]
+
+    params_str = ',\n'.join([f"{k} = {v}" for k, v in params_defaults.items()])
+
+    full_func_name = f"{prefix}.{func.__name__}" if prefix else func.__name__
+    return f"{full_func_name}({params_str})"
+
+def get_import_string(libraries):
+    result = []
+    for k, v in libraries.items():
+        result.append(f"import {k}")
+        if v is not None:
+            result[-1] += f" as {v}"
+    return '\n'.join(result)
+
 
 @click.group()
 def cli():
@@ -24,7 +80,7 @@ with open("{filename}", "r") as file:
     {dataframe_name} = pd.DataFrame(yaml.safe_load(file))"""
 
     if to_numeric:
-        cmd += f"""\n{dataframe_name} = {dataframe_name}.map(lambda e: pandas.to_numeric(e, errors='coerce'))\n"""
+        cmd += f"""\n{dataframe_name} = {dataframe_name}.map(lambda e: pd.to_numeric(e, errors='coerce'))\n"""
     cmd += f"""
 print({dataframe_name}.head())
 print({dataframe_name}.describe())
@@ -37,37 +93,23 @@ def heatmap(dataframe_name):
     """
     Output code to generate Seaborn heatmap
     """
-    click.echo(f'''
-import seaborn as sns
-import matplotlib.pyplot as plt
-import colorcet as cc
 
+    import_string = get_import_string({"seaborn":"sns", "matplotlib.pyplot":"plt", "colorcet":"cc"})
+
+    comment_string = """
 # Default colormap is perceptually-accurate and colorblind-friendly
 # See https://colorcet.com/index.html for details
 # Displaying the heatmap using seaborn
 # For detailed information on the parameters, visit:
 # https://seaborn.pydata.org/generated/seaborn.heatmap.html#seaborn.heatmap
+    """
 
-sns.heatmap({dataframe_name}, 
-            vmin=None, 
-            vmax=None, 
-            cmap=cc.cm.CET_CBL1, 
-            center=None, 
-            robust=False, 
-            annot=None, 
-            fmt='.2g', 
-            annot_kws=None, 
-            linewidths=0, 
-            linecolor='white', 
-            cbar=True, 
-            cbar_kws=None, 
-            cbar_ax=None, 
-            square=False, 
-            xticklabels='auto', 
-            yticklabels='auto', 
-            mask=None, 
-            ax=None)
-''')
+    override_defaults = {'data': UnquotedStr(dataframe_name), 'cmap': UnquotedStr('cc.cm.CET_CBL1'), 'method': 'single'}
+    method_call_str = get_method_call_with_defaults(sns.heatmap, 'sns', **override_defaults)
+    
+    result = '\n\n'.join([import_string, comment_string, method_call_str])
+    click.echo(result)
+
 
 
 @click.command()
@@ -76,36 +118,22 @@ def clustermap(dataframe_name):
     """
     Output code to generate Seaborn clustermap
     """
-    click.echo(f'''
-import seaborn as sns
-import matplotlib.pyplot as plt
-import colorcet as cc
 
+    import_string = get_import_string({"seaborn":"sns", "matplotlib.pyplot":"plt", "colorcet":"cc"})
+
+    comment_string = """
 # Default colormap is perceptually-accurate and colorblind-friendly
 # See https://colorcet.com/index.html for details
-# Seaborn clustermap documentation
-# https://seaborn.pydata.org/generated/seaborn.clustermap.html
-sns.clustermap({dataframe_name}, 
-               pivot_kws=None, 
-               method='average', 
-               metric='euclidean', 
-               z_score=None, 
-               standard_scale=None, 
-               figsize=(10, 10), 
-               cbar_kws=None, 
-               row_cluster=True, 
-               col_cluster=True, 
-               row_linkage=None, 
-               col_linkage=None, 
-               row_colors=None, 
-               col_colors=None, 
-               mask=None, 
-               dendrogram_ratio=0.2, 
-               colors_ratio=0.03, 
-               cbar_pos=(0.02, 0.8, 0.05, 0.18), 
-               tree_kws=None, 
-               cmap=cc.cm.CET_CBL1)
-''')
+# Displaying the clustermap using seaborn
+# For detailed information on the parameters, visit:
+# https://seaborn.pydata.org/generated/seaborn.clustermap.html#seaborn.clustermap
+    """
+
+    override_defaults = {'data': UnquotedStr(dataframe_name), 'cmap': UnquotedStr('cc.cm.CET_CBL1'), 'method': 'single'}
+    method_call_str = get_method_call_with_defaults(sns.clustermap, 'sns', additional_methods = [sns.heatmap], exclude_params=['ax', 'cbar_ax'], **override_defaults)
+    
+    result = '\n\n'.join([import_string, comment_string, method_call_str])
+    click.echo(result)
 
 cli.add_command(load_dataframe)
 cli.add_command(heatmap)
